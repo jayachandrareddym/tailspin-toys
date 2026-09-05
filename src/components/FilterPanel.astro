@@ -1,0 +1,106 @@
+---
+import type { Category, Publisher } from '../types/game';
+
+interface Props {
+    categories: Category[];
+    publishers: Publisher[];
+    selectedCategoryIds?: number[];
+    selectedPublisherId?: number;
+}
+
+const { categories, publishers, selectedCategoryIds = [], selectedPublisherId } = Astro.props;
+---
+
+<div class="bg-slate-800/60 backdrop-blur-sm rounded-xl p-6 border border-slate-700/50 mb-8" data-testid="filter-panel">
+    <h2 class="text-lg font-semibold text-slate-100 mb-6">Filter Games</h2>
+
+    <form id="filter-form" class="space-y-6" data-testid="filter-form">
+        {/* Categories Filter */}
+        <fieldset>
+            <legend class="text-sm font-medium text-slate-300 mb-3">Categories</legend>
+            <div class="space-y-2" role="group" aria-labelledby="categories-legend">
+                {categories.map((category) => (
+                    <label class="flex items-center gap-3 cursor-pointer group" key={category.id}>
+                        <input
+                            type="checkbox"
+                            name="categories"
+                            value={category.id}
+                            checked={selectedCategoryIds.includes(category.id)}
+                            data-testid={`filter-category-${category.id}`}
+                            class="w-4 h-4 rounded border-slate-600 text-blue-500 bg-slate-700 hover:bg-slate-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-slate-800 cursor-pointer transition-colors"
+                            aria-label={`Filter by ${category.name}`}
+                        />
+                        <span class="text-slate-300 group-hover:text-slate-100 transition-colors">{category.name}</span>
+                    </label>
+                ))}
+            </div>
+        </fieldset>
+
+        {/* Publisher Filter */}
+        <fieldset>
+            <legend class="text-sm font-medium text-slate-300 mb-3">Publisher</legend>
+            <select
+                name="publisher"
+                data-testid="filter-publisher"
+                class="w-full px-3 py-2 rounded border border-slate-600 bg-slate-700 text-slate-100 hover:border-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-offset-slate-800 transition-colors"
+                aria-label="Filter by publisher"
+            >
+                <option value="">All Publishers</option>
+                {publishers.map((publisher) => (
+                    <option key={publisher.id} value={publisher.id} selected={selectedPublisherId === publisher.id}>
+                        {publisher.name}
+                    </option>
+                ))}
+            </select>
+        </fieldset>
+
+        {/* Action Buttons */}
+        <div class="flex gap-3 pt-2">
+            <button
+                type="submit"
+                data-testid="apply-filters-button"
+                class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded transition-colors focus:ring-2 focus:ring-blue-500 focus:ring-offset-slate-800 focus:outline-none"
+            >
+                Apply Filters
+            </button>
+            <button
+                type="reset"
+                data-testid="clear-filters-button"
+                class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium rounded transition-colors focus:ring-2 focus:ring-slate-500 focus:ring-offset-slate-800 focus:outline-none"
+            >
+                Clear
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const form = document.getElementById('filter-form') as HTMLFormElement | null;
+
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const categoryIds = formData.getAll('categories') as string[];
+            const publisherId = formData.get('publisher') as string;
+
+            // Build query string
+            const params = new URLSearchParams();
+            if (categoryIds.length > 0) {
+                params.set('categories', categoryIds.join(','));
+            }
+            if (publisherId) {
+                params.set('publisher', publisherId);
+            }
+
+            // Navigate with filters
+            const url = params.toString() ? `?${params.toString()}` : '/';
+            window.location.href = url;
+        });
+
+        form.addEventListener('reset', () => {
+            window.location.href = '/';
+        });
+    }
+</script>

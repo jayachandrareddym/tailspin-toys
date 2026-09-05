@@ -3,12 +3,34 @@ import Layout from '../layouts/Layout.astro';
 import GameCard from '../components/GameCard.astro';
 import PageHero from '../components/PageHero.astro';
 import EmptyState from '../components/EmptyState.astro';
+import FilterPanel from '../components/FilterPanel.astro';
 import { getDatabase } from '../lib/db';
-import { getAllGames } from '../lib/games';
+import { getAllGames, getGamesByFilters, getAllCategories, getAllPublishers } from '../lib/games';
 
 export const prerender = true;
 
-const games = await getAllGames(getDatabase());
+const db = getDatabase();
+const allCategories = await getAllCategories(db);
+const allPublishers = await getAllPublishers(db);
+
+// Parse filter parameters from URL
+const url = new URL(Astro.request.url);
+const categoryParam = url.searchParams.get('categories');
+const publisherParam = url.searchParams.get('publisher');
+
+const selectedCategoryIds = categoryParam
+    ? categoryParam
+          .split(',')
+          .map((id) => parseInt(id, 10))
+          .filter((id) => !isNaN(id))
+    : [];
+const selectedPublisherId = publisherParam ? parseInt(publisherParam, 10) : undefined;
+
+// Fetch games with applied filters
+const games = await getGamesByFilters(db, {
+    categoryIds: selectedCategoryIds.length > 0 ? selectedCategoryIds : undefined,
+    publisherId: selectedPublisherId,
+});
 ---
 
 <Layout title="Tailspin Toys - Crowdfunding your new favorite game!">
@@ -18,11 +40,22 @@ const games = await getAllGames(getDatabase());
       subtitle="Find your next game! And maybe even back one! Explore our collection!"
     />
 
+    {/* Filter Panel */}
+    <FilterPanel
+      categories={allCategories}
+      publishers={allPublishers}
+      selectedCategoryIds={selectedCategoryIds}
+      selectedPublisherId={selectedPublisherId}
+    />
+
+    {/* Games Grid */}
     <div>
-      <h2 class="text-2xl font-medium mb-6 text-slate-100">Featured Games</h2>
+      <h2 class="text-2xl font-medium mb-6 text-slate-100">
+        {selectedCategoryIds.length > 0 || selectedPublisherId ? 'Filtered Games' : 'Featured Games'}
+      </h2>
 
       {games.length === 0 ? (
-        <EmptyState text="No games available at the moment." />
+        <EmptyState text="No games match your filters. Try adjusting them!" />
       ) : (
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="games-grid">
           {games.map((game) => <GameCard game={game} />)}

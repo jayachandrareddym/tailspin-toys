@@ -1,4 +1,4 @@
-import { eq, asc, or, inArray } from 'drizzle-orm';
+import { eq, asc, inArray, and } from 'drizzle-orm';
 import type { Database } from './db';
 import { games, categories, publishers } from '../../db/schema';
 import type { Game, Category, Publisher } from '../types/game';
@@ -73,16 +73,21 @@ export async function getGamesByFilters(
     db: Database,
     options?: { categoryIds?: number[]; publisherId?: number },
 ): Promise<Game[]> {
-    let query = baseGamesQuery(db);
+    const whereConditions = [];
 
     // Apply category filter (OR logic: matches any selected category)
     if (options?.categoryIds && options.categoryIds.length > 0) {
-        query = query.where(inArray(games.categoryId, options.categoryIds));
+        whereConditions.push(inArray(games.categoryId, options.categoryIds));
     }
 
     // Apply publisher filter
     if (options?.publisherId) {
-        query = query.where(eq(games.publisherId, options.publisherId));
+        whereConditions.push(eq(games.publisherId, options.publisherId));
+    }
+
+    let query = baseGamesQuery(db);
+    if (whereConditions.length > 0) {
+        query = query.where(and(...whereConditions));
     }
 
     const rows = await query.orderBy(asc(games.title));

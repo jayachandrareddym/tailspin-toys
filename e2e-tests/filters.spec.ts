@@ -31,7 +31,7 @@ test.describe('Game Filtering', () => {
   });
 
   test('should filter games by a single category', async ({ page }) => {
-    let categoryName: string | null;
+    let _categoryName: string | null;
     let initialGameCount: number;
 
     await test.step('Get initial game count', async () => {
@@ -41,8 +41,8 @@ test.describe('Game Filtering', () => {
 
     await test.step('Select a category and apply filter', async () => {
       const firstCheckbox = page.locator('input[name="categories"]').first();
-      const checkboxValue = await firstCheckbox.getAttribute('value');
-      categoryName = await firstCheckbox.locator('..').locator('span').first().textContent();
+      const _checkboxValue = await firstCheckbox.getAttribute('value');
+      _categoryName = await firstCheckbox.locator('..').locator('span').first().textContent();
 
       await firstCheckbox.check();
       await page.getByTestId('apply-filters-button').click();

@@ -1,7 +1,7 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, inArray, and } from 'drizzle-orm';
 import type { Database } from './db';
 import { games, categories, publishers } from '../../db/schema';
-import type { Game } from '../types/game';
+import type { Game, Category, Publisher } from '../types/game';
 
 const gameSelection = {
     id: games.id,
@@ -66,4 +66,45 @@ export async function getAllGameIds(db: Database): Promise<number[]> {
 export async function getGameById(db: Database, id: number): Promise<Game | null> {
     const row = await baseGamesQuery(db).where(eq(games.id, id)).get();
     return row ? mapGame(row) : null;
+}
+
+/** Games filtered by category IDs (OR logic) and/or publisher ID, ordered by title. */
+export async function getGamesByFilters(
+    db: Database,
+    options?: { categoryIds?: number[]; publisherId?: number },
+): Promise<Game[]> {
+    const hasCategoryFilter = options?.categoryIds && options.categoryIds.length > 0;
+    const hasPublisherFilter = Boolean(options?.publisherId);
+
+    if (!hasCategoryFilter && !hasPublisherFilter) {
+        // No filters: return all games
+        const rows = await baseGamesQuery(db).orderBy(asc(games.title));
+        return rows.map(mapGame);
+    }
+
+    // Build where conditions
+    const conditions = [];
+    if (hasCategoryFilter) {
+        conditions.push(inArray(games.categoryId, options.categoryIds!));
+    }
+    if (hasPublisherFilter) {
+        conditions.push(eq(games.publisherId, options.publisherId!));
+    }
+
+    // Apply all conditions in a single where call
+    const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+    const rows = await baseGamesQuery(db).where(whereCondition).orderBy(asc(games.title));
+    return rows.map(mapGame);
+}
+
+/** All unique categories, ordered by name. */
+export async function getAllCategories(db: Database): Promise<Category[]> {
+    const rows = await db.select({ id: categories.id, name: categories.name }).from(categories).orderBy(asc(categories.name));
+    return rows;
+}
+
+/** All unique publishers, ordered by name. */
+export async function getAllPublishers(db: Database): Promise<Publisher[]> {
+    const rows = await db.select({ id: publishers.id, name: publishers.name }).from(publishers).orderBy(asc(publishers.name));
+    return rows;
 }

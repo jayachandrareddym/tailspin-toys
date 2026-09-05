@@ -14,6 +14,25 @@ For repository coding and documentation standards (comments, TSDoc/JSDoc, and co
 
 The database is migrated and seeded automatically before `dev`/`build` (via the `predev`/`prebuild` npm scripts) and is written to the gitignored `tailspin.db` file.
 
+## Features
+
+### Game Filtering
+
+The home page includes a **filter panel** that allows users to:
+
+- Filter games by one or more categories (OR logic — games matching ANY selected category)
+- Filter games by publisher
+- Combine category and publisher filters
+- Share filtered views via URL parameters (e.g., `/?categories=1,2&publisher=3`)
+
+The filter state is reflected in the URL, making it shareable and bookmarkable. The data-access helpers (`getGamesByFilters`, `getAllCategories`, `getAllPublishers`) in `src/lib/games.ts` support all filtering scenarios.
+
+Filtering is fully accessible with:
+- Keyboard navigation (Tab, Space, Enter)
+- ARIA labels and semantic HTML
+- Visible focus states
+- `data-testid` attributes for testing
+
 ## Using this template
 
 This repository is a GitHub template. When you create a new repository from it, a one-time **Bootstrap template issues** workflow (`.github/workflows/bootstrap-issues.yml`) runs automatically on the first push to `main` and opens a set of starter issues describing suggested first features. Each issue is defined by a Markdown file in `.github/bootstrap-issues/` — the first heading becomes the issue title and the remaining content becomes the body — so you can edit, add, or remove files there to control which issues are created.

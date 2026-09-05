@@ -108,11 +108,34 @@ There is no Svelte/React layer. When a page genuinely needs client behaviour, ad
 
 ## TypeScript
 
-- Use TypeScript for type-safe props
-- Define `Props` interface in frontmatter
-- Type component imports and helper return values
-- Run `npx astro sync` to (re)generate route/content types before linting or type-checking
-- `.astro` files are type-checked by `npm run typecheck:astro` (which runs `astro sync` then `astro check`), on the classic `typescript` package. The pure TypeScript in `db/`, `src/lib/`, and `src/types/` is type-checked separately by `npm run typecheck` (the native TS 7 compiler, `tsgo`), which does **not** process `.astro` files.
+- Use TypeScript for type-safe props.
+- Define `Props` interface in frontmatter and include a short TSDoc comment describing each prop and any invariants.
+- Type component imports and helper return values using explicit parameter and return types for exported helpers so the native type-checker can verify them.
+- Run `npx astro sync` to (re)generate route/content types before linting or type-checking.
+- `.astro` files are type-checked by `npm run typecheck:astro` (which runs `astro sync` then `astro check`) on the classic `typescript` package. The pure TypeScript in `db/`, `src/lib/`, and `src/types/` is type-checked separately by `npm run typecheck` (the native TS 7 compiler, `tsgo`), which does **not** process `.astro` files.
+
+### Component Props documentation
+
+- Every reusable `.astro` component should document its `Props` interface in the frontmatter using TSDoc. This makes component contracts explicit and easier to use in pages and tests.
+
+Example:
+
+```astro
+---
+/** Props for GameCard component. */
+interface Props {
+  /** Unique numeric game id. */
+  id: number;
+  /** Title to display. */
+  title: string;
+}
+const { id, title } = Astro.props as Props;
+---
+```
+
+### Comment guidance
+
+- Prefer comments that explain *why* a decision exists, trade-offs, or non-obvious behavior. Avoid comments that restate what the code already expresses. Treat stale comments as bugs and update them in the same change that touches the related code.
 
 ## Best Practices
 

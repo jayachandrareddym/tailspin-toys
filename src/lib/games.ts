@@ -73,24 +73,27 @@ export async function getGamesByFilters(
     db: Database,
     options?: { categoryIds?: number[]; publisherId?: number },
 ): Promise<Game[]> {
-    const whereConditions = [];
+    const hasCategoryFilter = options?.categoryIds && options.categoryIds.length > 0;
+    const hasPublisherFilter = Boolean(options?.publisherId);
 
-    // Apply category filter (OR logic: matches any selected category)
-    if (options?.categoryIds && options.categoryIds.length > 0) {
-        whereConditions.push(inArray(games.categoryId, options.categoryIds));
+    if (!hasCategoryFilter && !hasPublisherFilter) {
+        // No filters: return all games
+        const rows = await baseGamesQuery(db).orderBy(asc(games.title));
+        return rows.map(mapGame);
     }
 
-    // Apply publisher filter
-    if (options?.publisherId) {
-        whereConditions.push(eq(games.publisherId, options.publisherId));
+    // Build where conditions
+    const conditions = [];
+    if (hasCategoryFilter) {
+        conditions.push(inArray(games.categoryId, options.categoryIds!));
+    }
+    if (hasPublisherFilter) {
+        conditions.push(eq(games.publisherId, options.publisherId!));
     }
 
-    let query = baseGamesQuery(db);
-    if (whereConditions.length > 0) {
-        query = query.where(and(...whereConditions));
-    }
-
-    const rows = await query.orderBy(asc(games.title));
+    // Apply all conditions in a single where call
+    const whereCondition = conditions.length === 1 ? conditions[0] : and(...conditions);
+    const rows = await baseGamesQuery(db).where(whereCondition).orderBy(asc(games.title));
     return rows.map(mapGame);
 }
 
